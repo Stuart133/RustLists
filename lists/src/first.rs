@@ -4,6 +4,16 @@ pub struct List {
     head: Link,
 }
 
+impl Drop for List {
+    fn drop(&mut self) {
+        let mut cur_link = mem::replace(&mut self.head, Link::Empty);
+
+        while let Link::More(mut boxed_node) = cur_link {
+            cur_link = mem::replace(&mut boxed_node.next, Link::Empty)
+        }
+    }
+}
+
 impl List {
     pub fn new() -> Self {
         List { head: Link::Empty }

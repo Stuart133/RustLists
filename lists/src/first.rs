@@ -56,7 +56,7 @@ mod test {
     #[test]
     fn basics() {
         let mut list = List::new();
-        
+
         assert_eq!(list.pop(), None);
 
         list.push(1);

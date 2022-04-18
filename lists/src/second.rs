@@ -4,6 +4,27 @@ pub struct List<T> {
 
 pub struct IntoIter<T>(List<T>);
 
+pub struct Iter<'a, T> {
+  next: Option<&'a Node<T>>,
+}
+
+impl<T> List<T> {
+  pub fn iter(&self) -> Iter<T> {
+    Iter { next: self.head.map(|node| &node )}
+  }
+}
+
+impl<T> Iterator for Iter<T> {
+  type Item = &T;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.next.map(|node| {
+      self.next = node.next.map(|node| &node);
+      &node.elem
+    })
+  }
+}
+
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
         let mut cur_link = self.head.take();

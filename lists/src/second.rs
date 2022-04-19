@@ -184,7 +184,6 @@ mod test {
         list.push(2);
         list.push(3);
 
-        
         let mut iter = list.iter_mut();
         assert_eq!(iter.next(), Some(&mut 3));
         assert_eq!(iter.next(), Some(&mut 2));

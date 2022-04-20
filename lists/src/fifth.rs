@@ -13,33 +13,30 @@ impl<T> List<T> {
         }
     }
 
-    pub fn push(mut self, elem: T) {
-        let new_tail = Box::new(Node {
+    pub fn push(&mut self, elem: T) {
+        let mut new_tail = Box::new(Node {
             elem: elem,
             next: None,
         });
 
-        let new_tail = match self.tail.take() {
-            Some(old_tail) => {
-                old_tail.next = Some(new_tail);
-                old_tail.next.as_deref_mut()
-            }
-            None => {
-                self.head = Some(new_tail);
-                self.head.as_deref_mut()
-            }
-        };
+        let raw_tail: *mut _ = &mut *new_tail;
 
-        self.tail = new_tail;
+        if !self.tail.is_null() {
+            unsafe { (*self.tail).next = Some(new_tail) };
+        } else {
+            self.head = Some(new_tail);
+        }
+
+        self.tail = raw_tail;
     }
 
-    fn pop(mut self) -> Option<T> {
+    pub fn pop(&mut self) -> Option<T> {
       self.head.take().map(|head| {
         let head = *head;
         self.head = head.next;
 
         if self.head.is_none() {
-          self.tail = None;
+          self.tail = ptr::null_mut();
         }
 
         head.elem
@@ -83,6 +80,15 @@ mod test {
 
         // Check exhaustion
         assert_eq!(list.pop(), Some(5));
+        assert_eq!(list.pop(), None);
+
+        // Check the exhaustion case fixed the pointer right
+        list.push(6);
+        list.push(7);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(6));
+        assert_eq!(list.pop(), Some(7));
         assert_eq!(list.pop(), None);
     }
 }

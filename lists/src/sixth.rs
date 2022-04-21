@@ -1,5 +1,33 @@
 use std::{marker::PhantomData, ptr::NonNull};
 
+pub struct IntoIter<T> {
+  list: LinkedList<T>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+  type Item = T;
+  
+  fn next(&mut self) -> Option<Self::Item> {
+    self.list.pop_front()
+  }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    (self.list.len, Some(self.list.len))
+  }
+}
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+  fn next_back(&mut self) -> Option<Self::Item> {
+    self.list.pop_back()
+  }
+}
+
+impl<T> ExactSizeIterator for IntoIter<T> {
+  fn len(&self) -> usize {
+      self.list.len
+  }
+}
+
 pub struct Iter<'a, T> {
     front: Link<T>,
     back: Link<T>,
@@ -60,6 +88,10 @@ impl<T> LinkedList<T> {
         }
     }
 
+    pub fn into_iter(self) -> IntoIter<T> {
+      IntoIter { list: self }
+    } 
+
     pub fn iter(&self) -> Iter<T> {
         Iter {
             front: self.front,
@@ -115,9 +147,37 @@ impl<T> LinkedList<T> {
         }
     }
 
+    pub fn pop_back(&mut self) -> Option<T> {
+      unsafe {
+          self.back.map(|node| {
+              let boxed_node = Box::from_raw(node.as_ptr());
+              let result = boxed_node.elem;
+
+              self.back = boxed_node.front;
+              if let Some(new) = self.back {
+                  (*new.as_ptr()).back = None;
+              } else {
+                  self.front = None;
+              }
+
+              self.len -= 1;
+              result
+          })
+      }
+  }
+
     pub fn len(&self) -> usize {
         self.len
     }
+}
+
+impl<T> IntoIterator for LinkedList<T> {
+  type IntoIter = IntoIter<T>;
+  type Item = T;
+
+  fn into_iter(self) -> Self::IntoIter {
+      self.into_iter()
+  }
 }
 
 impl<'a, T> IntoIterator for &'a LinkedList<T> {
